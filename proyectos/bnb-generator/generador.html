@@ -109,9 +109,14 @@
       <h2>Configuración</h2>
     </div>
     <div class="section-body">
-      <div class="field full">
-        <label>Anthropic API Key (para generar guía local con IA)</label>
+      <div class="field">
+        <label>Anthropic API Key (guía local con IA)</label>
         <input type="password" id="apiKey" placeholder="sk-ant-...">
+      </div>
+      <div class="field">
+        <label>Google Places API Key (fotos automáticas)</label>
+        <input type="password" id="placesApiKey" placeholder="AIza...">
+        <span style="font-size:11px;color:var(--gray);margin-top:4px;">Activa "Places API (New)" en Google Cloud Console</span>
       </div>
       <div class="field">
         <label>Nombre del host</label>
@@ -420,6 +425,33 @@ const RULES_MAP = {
   report_issues:{ es: 'En caso de algún desperfecto, comunícate con nosotros inmediatamente.', en: 'In case of any problem, contact us immediately.' }
 };
 
+// ─── GOOGLE PLACES PHOTO FETCH ───────────────────────────────
+async function fetchPlacePhoto(placeName, colonia, ciudad, placesKey) {
+  try {
+    const searchRes = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': placesKey,
+        'X-Goog-FieldMask': 'places.photos'
+      },
+      body: JSON.stringify({ textQuery: `${placeName} ${colonia} ${ciudad}`, maxResultCount: 1 })
+    });
+    const searchData = await searchRes.json();
+    const photoName = searchData.places?.[0]?.photos?.[0]?.name;
+    if (!photoName) return null;
+
+    const mediaRes = await fetch(
+      `https://places.googleapis.com/v1/${photoName}/media?maxHeightPx=500&skipHttpRedirect=true&key=${placesKey}`
+    );
+    const mediaData = await mediaRes.json();
+    return mediaData.photoUri || null;
+  } catch (e) {
+    console.warn(`Sin foto para ${placeName}:`, e.message);
+    return null;
+  }
+}
+
 // ─── LOCAL GUIDE STATE ────────────────────────────────────────
 let localGuide = { restaurants: [], attractions: [], emergency: [] };
 let activeTab = 'restaurants';
@@ -620,6 +652,19 @@ Incluye exactamente 5 restaurantes, 3 atracciones y 3 servicios de emergencia. L
     const jsonEnd = text.lastIndexOf('}') + 1;
     localGuide = JSON.parse(text.slice(jsonStart, jsonEnd));
 
+    // Buscar fotos con Google Places si hay key
+    const placesKey = document.getElementById('placesApiKey').value.trim();
+    if (placesKey) {
+      showStatus('localGuideStatus', '📸 Buscando fotos de los lugares...', 'loading');
+      const toFetch = [
+        ...localGuide.restaurants.map(p => p),
+        ...localGuide.attractions.map(p => p)
+      ];
+      await Promise.all(toFetch.map(async place => {
+        place.photo_url = await fetchPlacePhoto(place.name, data.colonia, data.ciudad, placesKey);
+      }));
+    }
+
     showStatus('localGuideStatus', '✅ Guía local generada. Revisa y edita antes de generar la página.', 'success');
     renderLocalGuidePreview();
   } catch (e) {
@@ -786,31 +831,22 @@ function generateAndDownload() {
   const rulesEs = data.rules.map(r => `                        <li>${r.es}</li>`).join('\n');
   const rulesEn = data.rules.map(r => `                        <li>${r.en}</li>`).join('\n');
 
-  const restaurantCards = (localGuide.restaurants || []).map(r => `
-                    <a href="${r.maps_url||'#'}" target="_blank" style="text-decoration: none; color: inherit;">
+  const placeCard = (p, url) => `
+                    <a href="${url||'#'}" target="_blank" style="text-decoration: none; color: inherit;">
                         <div class="place-card">
+                            ${p.photo_url ? `<div class="place-image"><img src="${p.photo_url}" alt="${p.name}" loading="lazy"></div>` : ''}
                             <div class="place-info">
-                                <div class="place-name">${r.name}</div>
-                                <div class="place-description es">${r.description_es}</div>
-                                <div class="place-description en">${r.description_en}</div>
-                                <div class="place-distance es">${r.distance_es}</div>
-                                <div class="place-distance en">${r.distance_en}</div>
+                                <div class="place-name">${p.name}</div>
+                                <div class="place-description es">${p.description_es}</div>
+                                <div class="place-description en">${p.description_en}</div>
+                                <div class="place-distance es">${p.distance_es}</div>
+                                <div class="place-distance en">${p.distance_en}</div>
                             </div>
                         </div>
-                    </a>`).join('');
+                    </a>`;
 
-  const attractionCards = (localGuide.attractions || []).map(a => `
-                    <a href="${a.maps_url||'#'}" target="_blank" style="text-decoration: none; color: inherit;">
-                        <div class="place-card">
-                            <div class="place-info">
-                                <div class="place-name">${a.name}</div>
-                                <div class="place-description es">${a.description_es}</div>
-                                <div class="place-description en">${a.description_en}</div>
-                                <div class="place-distance es">${a.distance_es}</div>
-                                <div class="place-distance en">${a.distance_en}</div>
-                            </div>
-                        </div>
-                    </a>`).join('');
+  const restaurantCards = (localGuide.restaurants || []).map(r => placeCard(r, r.maps_url)).join('');
+  const attractionCards = (localGuide.attractions || []).map(a => placeCard(a, a.maps_url)).join('');
 
   const emergencyItems = (localGuide.emergency || []).map(e => `
                     <div class="contact-item">
