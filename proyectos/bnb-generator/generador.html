@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Páginas BNB</title>
+  <style>
+    :root {
+      --red: #FF385C;
+      --dark: #222222;
+      --gray: #717171;
+      --border: #DDDDDD;
+      --bg: #F7F7F7;
+      --radius: 12px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--dark); }
+
+    header { background: white; border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+    header svg { color: var(--red); }
+    header h1 { font-size: 20px; font-weight: 600; }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 32px 16px 80px; }
+
+    .section { background: white; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden; }
+    .section-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .section-header h2 { font-size: 16px; font-weight: 600; }
+    .section-icon { font-size: 20px; }
+    .section-body { padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .section-body.single { grid-template-columns: 1fr; }
+    .section-body.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: 13px; font-weight: 500; color: var(--gray); }
+    input, textarea, select {
+      border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+      font-size: 14px; font-family: inherit; color: var(--dark); transition: border-color .15s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--dark); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; grid-column: 1 / -1; }
+    .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+    .checkbox-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--red); cursor: pointer; }
+
+    .amenities-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; grid-column: 1 / -1; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none; transition: all .15s;
+    }
+    .btn-primary { background: var(--red); color: white; }
+    .btn-primary:hover { background: #E00B41; }
+    .btn-secondary { background: white; color: var(--dark); border: 1px solid var(--border); }
+    .btn-secondary:hover { box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .btn-success { background: #008A05; color: white; }
+    .btn-success:hover { background: #006A04; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .ai-section { background: white; border-radius: var(--radius); border: 2px dashed var(--border); padding: 24px; margin-bottom: 20px; text-align: center; }
+    .ai-section h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .ai-section p { font-size: 14px; color: var(--gray); margin-bottom: 16px; }
+
+    #local-guide-preview { margin-top: 16px; text-align: left; }
+    .place-edit { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .place-edit-header { font-weight: 600; font-size: 13px; color: var(--gray); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .place-edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .place-edit-grid .full { grid-column: 1 / -1; }
+    .place-edit input, .place-edit textarea { font-size: 13px; }
+    .btn-remove { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 18px; line-height: 1; }
+    .btn-remove:hover { color: var(--red); }
+
+    .tabs-local { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-local { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: white; }
+    .tab-local.active { background: var(--dark); color: white; border-color: var(--dark); }
+
+    .actions-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: center; gap: 12px; z-index: 10; }
+
+    .status { font-size: 13px; padding: 10px 16px; border-radius: 8px; margin-top: 12px; }
+    .status.error { background: #FFF0F3; color: #C00; border: 1px solid #FFD0D8; }
+    .status.success { background: #F0FFF4; color: #006A04; border: 1px solid #C3F0C8; }
+    .status.loading { background: #FFF8E1; color: #7A5800; border: 1px solid #FFE57F; }
+
+    .separator { text-align: center; font-size: 12px; color: var(--gray); margin: 8px 0; }
+
+    @media (max-width: 600px) {
+      .section-body, .section-body.triple { grid-template-columns: 1fr; }
+      .checkboxes, .amenities-list, .place-edit-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 1c2.008 0 3.463.963 4.751 3.269l.533 1.025c1.954 3.83 6.114 12.54 7.1 14.836l.145.353c.667 1.591.91 2.472.96 3.396l.01.415.001.228c0 4.062-2.877 6.478-6.357 6.478-2.224 0-4.556-1.258-6.709-3.386l-.257-.26-.172-.179h-.011l-.176.185c-2.044 2.1-4.267 3.42-6.414 3.615l-.28.019-.267.006C5.377 31 2.5 28.584 2.5 24.522l.005-.469c.026-.928.23-1.768.83-3.244l.216-.524c.966-2.298 6.083-12.989 7.707-16.034C12.537 1.963 13.992 1 16 1z" fill="currentColor"/>
+  </svg>
+  <h1>Generador de Páginas BNB</h1>
+</header>
+
+<div class="container">
+
+  <!-- API KEY -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔐</span>
+      <h2>Configuración</h2>
+    </div>
+    <div class="section-body">
+      <div class="field full">
+        <label>Anthropic API Key (para generar guía local con IA)</label>
+        <input type="password" id="apiKey" placeholder="sk-ant-...">
+      </div>
+      <div class="field">
+        <label>Nombre del host</label>
+        <input type="text" id="hostName" placeholder="María García">
+      </div>
+      <div class="field">
+        <label>WhatsApp (con código de país)</label>
+        <input type="text" id="hostWhatsapp" placeholder="+525540179402">
+      </div>
+      <div class="field full">
+        <label>Email del host</label>
+        <input type="email" id="hostEmail" placeholder="host@email.com">
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPIEDAD -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🏠</span>
+      <h2>Datos del alojamiento</h2>
+    </div>
+    <div class="section-body">
+      <div class="field full">
+        <label>Nombre completo del alojamiento</label>
+        <input type="text" id="propertyName" placeholder="San Rafael 58 (Depto 103)">
+      </div>
+      <div class="field full">
+        <label>Dirección</label>
+        <input type="text" id="address" placeholder="Calle San Rafael 58">
+      </div>
+      <div class="field">
+        <label>Colonia / Barrio</label>
+        <input type="text" id="colonia" placeholder="Sta. María la Ribera">
+      </div>
+      <div class="field">
+        <label>Ciudad</label>
+        <input type="text" id="ciudad" placeholder="Ciudad de México" value="Ciudad de México">
+      </div>
+      <div class="field">
+        <label>Número de depto / unidad</label>
+        <input type="text" id="deptNumber" placeholder="103">
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCESO -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔑</span>
+      <h2>Acceso</h2>
+    </div>
+    <div class="section-body">
+      <div class="field">
+        <label>Código de acceso al edificio</label>
+        <input type="text" id="buildingCode" placeholder="1005">
+      </div>
+      <div class="field">
+        <label>Instrucción después del código</label>
+        <input type="text" id="buildingCodeInstruction" placeholder="Presiona # después del número">
+      </div>
+      <div class="field full">
+        <label>Instrucciones de salida del edificio</label>
+        <input type="text" id="exitInstruction" placeholder="Gira la perilla en sentido contrario a las manecillas">
+      </div>
+      <div class="field">
+        <label>Código de la puerta del depto</label>
+        <input type="text" id="doorCode" placeholder="2310">
+      </div>
+      <div class="field">
+        <label>Tipo de cerradura</label>
+        <input type="text" id="lockType" placeholder="KWIKSET" value="KWIKSET">
+      </div>
+      <div class="field full">
+        <label>Instrucción después del código de puerta</label>
+        <input type="text" id="doorInstruction" placeholder="Presiona el botón KWIKSET después del código">
+      </div>
+      <div class="field">
+        <label>Foto acceso edificio (nombre de archivo)</label>
+        <input type="text" id="photoAccess" placeholder="Acceso.jpeg">
+      </div>
+      <div class="field">
+        <label>Foto salida/apertura puerta (nombre de archivo)</label>
+        <input type="text" id="photoExit" placeholder="abrir2.jpeg">
+      </div>
+    </div>
+  </div>
+
+  <!-- WIFI -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📶</span>
+      <h2>WiFi</h2>
+    </div>
+    <div class="section-body">
+      <div class="field">
+        <label>Nombre de la red</label>
+        <input type="text" id="wifiName" placeholder="INFINITUM1C1A">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="text" id="wifiPass" placeholder="Vt2Dd4Qp6t">
+      </div>
+    </div>
+  </div>
+
+  <!-- HORARIOS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">⏰</span>
+      <h2>Horarios</h2>
+    </div>
+    <div class="section-body triple">
+      <div class="field">
+        <label>Check-in</label>
+        <input type="text" id="checkin" placeholder="3:00 PM" value="3:00 PM">
+      </div>
+      <div class="field">
+        <label>Check-out</label>
+        <input type="text" id="checkout" placeholder="12:00 PM" value="12:00 PM">
+      </div>
+      <div class="field">
+        <label>¿Dónde dejar llaves al salir?</label>
+        <input type="text" id="keysLocation" placeholder="Mesa de la entrada">
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTRUCCIONES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔧</span>
+      <h2>Instrucciones del depto</h2>
+    </div>
+    <div class="section-body">
+      <div class="field">
+        <label>Tipo de boiler / calentador</label>
+        <select id="boilerType">
+          <option value="auto">Automático (se prende solo al abrir el agua)</option>
+          <option value="manual">Manual (instrucciones específicas)</option>
+          <option value="none">Sin boiler / otro sistema</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Instrucciones adicionales del boiler</label>
+        <input type="text" id="boilerExtra" placeholder="(dejar en blanco si es automático estándar)">
+      </div>
+      <div class="field">
+        <label>Tipo de climatización</label>
+        <select id="climateType">
+          <option value="fans">Solo ventiladores</option>
+          <option value="ac">Solo A/C</option>
+          <option value="both">A/C y ventiladores</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>Otras instrucciones específicas del depto</label>
+        <textarea id="otherInstructions" placeholder="Instrucciones de lavadora, terraza, reglas de uso del espacio, etc."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- AMENIDADES -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">✨</span>
+      <h2>Amenidades</h2>
+    </div>
+    <div class="section-body">
+      <div class="field">
+        <label>Número de recámaras</label>
+        <input type="number" id="bedrooms" min="0" placeholder="2" value="1">
+      </div>
+      <div class="field">
+        <label>Número de baños</label>
+        <input type="number" id="bathrooms" min="0" placeholder="1" value="1">
+      </div>
+      <div class="amenities-list">
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="kitchen" checked> 🍳 Cocina equipada</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="wifi" checked> 📶 WiFi alta velocidad</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="tv" checked> 📺 Smart TV con Streaming</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="fans" checked> ❄️ Ventiladores</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="ac"> 🌡️ Aire acondicionado</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="coffee" checked> ☕ Cafetera</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="washer"> 🧺 Lavadora</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="dryer"> 🧺 Secadora</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="pool"> 🏊 Alberca</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="gym"> 🏋️ Gimnasio</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="elevator"> 🛗 Elevador</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="parking_free"> 🅿️ Estacionamiento gratuito</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="parking_paid"> 🅿️ Estacionamiento de pago cercano</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="toiletries" checked> 🧼 Artículos de aseo básicos</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="towels" checked> 🛁 Toallas limpias</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="safe"> 🔒 Caja fuerte</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="balcony"> 🌿 Balcón / Terraza</label>
+        <label class="checkbox-item"><input type="checkbox" name="amenity" value="workspace"> 💻 Espacio de trabajo</label>
+      </div>
+      <div class="field full">
+        <label>Amenidades adicionales (una por línea, formato: emoji Nombre ES | Name EN)</label>
+        <textarea id="customAmenities" placeholder="🎮 Consola de videojuegos | Video game console&#10;🌊 Vista al mar | Ocean view"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGLAS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📋</span>
+      <h2>Reglas de la casa</h2>
+    </div>
+    <div class="section-body">
+      <div class="checkboxes">
+        <label class="checkbox-item"><input type="checkbox" name="rule" value="no_smoking" checked> 🚬 No fumar dentro del alojamiento</label>
+        <label class="checkbox-item"><input type="checkbox" name="rule" value="no_pets" checked> 🐾 No se permiten mascotas</label>
+        <label class="checkbox-item"><input type="checkbox" name="rule" value="no_parties" checked> 🎉 No se permiten fiestas o eventos</label>
+        <label class="checkbox-item"><input type="checkbox" name="rule" value="quiet_hours" checked> 🤫 Silencio después de las 10:00 PM</label>
+        <label class="checkbox-item"><input type="checkbox" name="rule" value="lights_off" checked> 💡 Apagar luces y cerrar ventanas al salir</label>
+        <label class="checkbox-item"><input type="checkbox" name="rule" value="report_issues" checked> ⚠️ Reportar cualquier desperfecto inmediatamente</label>
+      </div>
+      <div class="field full">
+        <label>Días y horario para sacar basura</label>
+        <input type="text" id="trashDays" placeholder="Martes, Jueves y Sábado antes de las 9 am">
+      </div>
+      <div class="field full">
+        <label>Reglas adicionales (una por línea)</label>
+        <textarea id="customRules" placeholder="Regla específica del edificio o depto..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOTOS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">📸</span>
+      <h2>Fotos</h2>
+    </div>
+    <div class="section-body">
+      <div class="field">
+        <label>Foto principal (nombre de archivo)</label>
+        <input type="text" id="photoMain" placeholder="sala1.avif">
+      </div>
+      <div class="field">
+        <label>Foto del mapa (nombre de archivo)</label>
+        <input type="text" id="photoMap" placeholder="mapa.jpg">
+      </div>
+      <div class="field full">
+        <label>URL de Google Maps del alojamiento</label>
+        <input type="text" id="mapsUrl" placeholder="https://maps.app.goo.gl/...">
+      </div>
+      <p class="field full" style="font-size:13px; color: var(--gray);">
+        ⚠️ Las fotos deben estar en una carpeta llamada <strong>Imagenes/</strong> junto al index.html generado.
+      </p>
+    </div>
+  </div>
+
+  <!-- AI LOCAL GUIDE -->
+  <div class="ai-section">
+    <h2>🗺️ Guía local</h2>
+    <p>Ingresa los datos del alojamiento arriba y haz clic para que Claude genere restaurantes, atracciones y servicios de emergencia cercanos.</p>
+    <button class="btn btn-secondary" onclick="generateLocalGuide()" id="btnLocalGuide">
+      ✨ Generar guía local con IA
+    </button>
+    <div id="localGuideStatus"></div>
+    <div id="local-guide-preview"></div>
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="actions-bar">
+  <button class="btn btn-secondary" onclick="saveDraft()">💾 Guardar borrador</button>
+  <button class="btn btn-success" onclick="generateAndDownload()" id="btnGenerate">
+    ⬇️ Generar y descargar index.html
+  </button>
+</div>
+
+<script>
+// ─── AMENITY MAP ──────────────────────────────────────────────
+const AMENITY_MAP = {
+  kitchen:       { icon: '🍳', es: 'Cocina equipada',                    en: 'Equipped Kitchen' },
+  wifi:          { icon: '📶', es: 'WiFi de alta velocidad',             en: 'High-speed WiFi' },
+  tv:            { icon: '📺', es: 'Smart TV con Apps de Streaming',     en: 'Smart TV with Streaming Apps' },
+  fans:          { icon: '❄️', es: 'Ventiladores',                       en: 'Fans' },
+  ac:            { icon: '🌡️', es: 'Aire acondicionado',                 en: 'Air conditioning' },
+  coffee:        { icon: '☕', es: 'Cafetera',                           en: 'Coffee maker' },
+  washer:        { icon: '🧺', es: 'Lavadora',                          en: 'Washing machine' },
+  dryer:         { icon: '🧺', es: 'Secadora',                          en: 'Dryer' },
+  pool:          { icon: '🏊', es: 'Alberca',                           en: 'Swimming pool' },
+  gym:           { icon: '🏋️', es: 'Gimnasio',                          en: 'Gym' },
+  elevator:      { icon: '🛗', es: 'Elevador',                          en: 'Elevator' },
+  parking_free:  { icon: '🅿️', es: 'Estacionamiento gratuito',          en: 'Free parking' },
+  parking_paid:  { icon: '🅿️', es: 'Estacionamiento de pago cercano',   en: 'Paid parking available nearby' },
+  toiletries:    { icon: '🧼', es: 'Artículos de aseo básicos',          en: 'Basic toiletries' },
+  towels:        { icon: '🛁', es: 'Toallas limpias',                   en: 'Clean towels' },
+  safe:          { icon: '🔒', es: 'Caja fuerte',                       en: 'Safe box' },
+  balcony:       { icon: '🌿', es: 'Balcón / Terraza',                  en: 'Balcony / Terrace' },
+  workspace:     { icon: '💻', es: 'Espacio de trabajo',                 en: 'Workspace' }
+};
+
+const RULES_MAP = {
+  no_smoking:  { es: 'No se permite fumar dentro del alojamiento.', en: 'No smoking inside the accommodation.' },
+  no_pets:     { es: 'No se permiten mascotas.', en: 'No pets allowed.' },
+  no_parties:  { es: 'No se permiten fiestas o eventos.', en: 'No parties or events allowed.' },
+  quiet_hours: { es: 'Respeta a los vecinos manteniendo niveles de ruido moderados, especialmente después de las 10:00 PM.', en: 'Respect neighbors by keeping noise levels moderate, especially after 10:00 PM.' },
+  lights_off:  { es: 'Por favor, apaga las luces y cierra ventanas cuando salgas del departamento.', en: 'Please turn off the lights and close windows when leaving the apartment.' },
+  report_issues:{ es: 'En caso de algún desperfecto, comunícate con nosotros inmediatamente.', en: 'In case of any problem, contact us immediately.' }
+};
+
+// ─── LOCAL GUIDE STATE ────────────────────────────────────────
+let localGuide = { restaurants: [], attractions: [], emergency: [] };
+let activeTab = 'restaurants';
+
+// ─── COLLECT FORM DATA ────────────────────────────────────────
+function collectData() {
+  const checkedAmenities = [...document.querySelectorAll('input[name="amenity"]:checked')].map(el => el.value);
+  const amenities = checkedAmenities.map(k => AMENITY_MAP[k]);
+
+  const customAmenitiesRaw = document.getElementById('customAmenities').value.trim();
+  if (customAmenitiesRaw) {
+    customAmenitiesRaw.split('\n').forEach(line => {
+      const parts = line.split('|');
+      if (parts.length === 2) {
+        const [esPart, enPart] = parts;
+        const match = esPart.trim().match(/^(\S+)\s+(.+)$/);
+        if (match) amenities.push({ icon: match[1], es: match[2].trim(), en: enPart.trim() });
+      }
+    });
+  }
+
+  const checkedRules = [...document.querySelectorAll('input[name="rule"]:checked')].map(el => el.value);
+  const rules = checkedRules.map(k => RULES_MAP[k]);
+
+  const trashDays = document.getElementById('trashDays').value.trim();
+  if (trashDays) {
+    rules.unshift({
+      es: `Sacar la basura: ${trashDays}`,
+      en: `Take out the trash: ${trashDays}`
+    });
+  }
+
+  const customRulesRaw = document.getElementById('customRules').value.trim();
+  if (customRulesRaw) {
+    customRulesRaw.split('\n').forEach(r => {
+      if (r.trim()) rules.push({ es: r.trim(), en: r.trim() });
+    });
+  }
+
+  const boilerType = document.getElementById('boilerType').value;
+  const boilerExtra = document.getElementById('boilerExtra').value.trim();
+  let boilerInstructionEs, boilerInstructionEn;
+  if (boilerType === 'auto') {
+    boilerInstructionEs = boilerExtra || 'El boiler es automático, cuando abres el agua caliente se prende el boiler, y en segundos tendrás agua caliente.';
+    boilerInstructionEn = 'The water heater is automatic; when you open the hot water tap, the heater turns on, and you\'ll have hot water in seconds.';
+  } else if (boilerType === 'manual') {
+    boilerInstructionEs = boilerExtra || 'Enciende el boiler manualmente antes de usar el agua caliente.';
+    boilerInstructionEn = boilerExtra || 'Turn on the water heater manually before using hot water.';
+  } else {
+    boilerInstructionEs = boilerExtra || '';
+    boilerInstructionEn = boilerExtra || '';
+  }
+
+  const climateType = document.getElementById('climateType').value;
+  let climateEs, climateEn;
+  if (climateType === 'fans') {
+    climateEs = 'Hay un ventilador disponible en cada habitación ya que en la ciudad de México no se acostumbra A/C.';
+    climateEn = 'There is a fan available in each room as air conditioning is not common in Mexico City.';
+  } else if (climateType === 'ac') {
+    climateEs = 'El alojamiento cuenta con aire acondicionado.';
+    climateEn = 'The accommodation has air conditioning.';
+  } else {
+    climateEs = 'El alojamiento cuenta con aire acondicionado y ventiladores.';
+    climateEn = 'The accommodation has air conditioning and fans.';
+  }
+
+  return {
+    apiKey: document.getElementById('apiKey').value.trim(),
+    hostName: document.getElementById('hostName').value.trim(),
+    hostWhatsapp: document.getElementById('hostWhatsapp').value.trim(),
+    hostEmail: document.getElementById('hostEmail').value.trim(),
+    propertyName: document.getElementById('propertyName').value.trim(),
+    address: document.getElementById('address').value.trim(),
+    colonia: document.getElementById('colonia').value.trim(),
+    ciudad: document.getElementById('ciudad').value.trim(),
+    deptNumber: document.getElementById('deptNumber').value.trim(),
+    buildingCode: document.getElementById('buildingCode').value.trim(),
+    buildingCodeInstruction: document.getElementById('buildingCodeInstruction').value.trim(),
+    exitInstruction: document.getElementById('exitInstruction').value.trim(),
+    doorCode: document.getElementById('doorCode').value.trim(),
+    lockType: document.getElementById('lockType').value.trim(),
+    doorInstruction: document.getElementById('doorInstruction').value.trim(),
+    photoAccess: document.getElementById('photoAccess').value.trim(),
+    photoExit: document.getElementById('photoExit').value.trim(),
+    wifiName: document.getElementById('wifiName').value.trim(),
+    wifiPass: document.getElementById('wifiPass').value.trim(),
+    checkin: document.getElementById('checkin').value.trim(),
+    checkout: document.getElementById('checkout').value.trim(),
+    keysLocation: document.getElementById('keysLocation').value.trim(),
+    boilerInstructionEs,
+    boilerInstructionEn,
+    climateEs,
+    climateEn,
+    otherInstructions: document.getElementById('otherInstructions').value.trim(),
+    bedrooms: document.getElementById('bedrooms').value,
+    bathrooms: document.getElementById('bathrooms').value,
+    amenities,
+    rules,
+    photoMain: document.getElementById('photoMain').value.trim(),
+    photoMap: document.getElementById('photoMap').value.trim(),
+    mapsUrl: document.getElementById('mapsUrl').value.trim(),
+  };
+}
+
+// ─── GENERATE LOCAL GUIDE WITH CLAUDE ─────────────────────────
+async function generateLocalGuide() {
+  const data = collectData();
+  if (!data.apiKey) { showStatus('localGuideStatus', 'Ingresa tu Anthropic API Key arriba.', 'error'); return; }
+  if (!data.colonia || !data.ciudad) { showStatus('localGuideStatus', 'Ingresa la colonia y ciudad del alojamiento.', 'error'); return; }
+
+  const btn = document.getElementById('btnLocalGuide');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando...';
+  showStatus('localGuideStatus', 'Claude está generando la guía local. Esto tarda ~10 segundos...', 'loading');
+
+  const prompt = `Eres un experto en turismo local en México. El huésped se hospeda en: ${data.address}, colonia ${data.colonia}, ${data.ciudad}.
+
+Genera recomendaciones locales reales y cercanas a esa ubicación. Devuelve ÚNICAMENTE un JSON válido con este formato exacto (sin texto extra, sin markdown):
+
+{
+  "restaurants": [
+    {
+      "name": "nombre del lugar",
+      "description_es": "descripción en español de 2-3 oraciones que invite al huésped a visitarlo",
+      "description_en": "description in English of 2-3 sentences",
+      "distance_es": "A X min caminando • $ • Horario aproximado",
+      "distance_en": "X min walking • $ • Approximate hours",
+      "maps_url": "https://maps.google.com/?q=nombre+del+lugar+${encodeURIComponent(data.colonia + ' ' + data.ciudad)}"
+    }
+  ],
+  "attractions": [
+    {
+      "name": "nombre",
+      "description_es": "descripción en español",
+      "description_en": "description in English",
+      "distance_es": "A X min caminando/en transporte • precio",
+      "distance_en": "X min walking/by transport • price",
+      "maps_url": "https://maps.google.com/?q=nombre+atraccion"
+    }
+  ],
+  "emergency": [
+    {
+      "type": "hospital",
+      "icon": "🏥",
+      "name": "nombre del hospital más cercano",
+      "address_es": "dirección completa",
+      "address_en": "full address",
+      "distance_es": "A X min en coche",
+      "distance_en": "X min by car",
+      "phone": "+52..."
+    },
+    {
+      "type": "pharmacy",
+      "icon": "💊",
+      "name": "farmacia más cercana",
+      "address_es": "dirección",
+      "address_en": "address",
+      "distance_es": "A X min caminando",
+      "distance_en": "X min walking",
+      "phone": "+52..."
+    },
+    {
+      "type": "police",
+      "icon": "👮",
+      "name": "estación de policía más cercana",
+      "address_es": "dirección",
+      "address_en": "address",
+      "distance_es": "A X min caminando",
+      "distance_en": "X min walking",
+      "phone": "911"
+    }
+  ]
+}
+
+Incluye exactamente 5 restaurantes, 3 atracciones y 3 servicios de emergencia. Los negocios deben ser reales y conocidos en esa zona. Si no estás seguro de uno, elige el más probable basado en el barrio.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': data.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || 'Error de API');
+
+    const text = json.content[0].text.trim();
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}') + 1;
+    localGuide = JSON.parse(text.slice(jsonStart, jsonEnd));
+
+    showStatus('localGuideStatus', '✅ Guía local generada. Revisa y edita antes de generar la página.', 'success');
+    renderLocalGuidePreview();
+  } catch (e) {
+    showStatus('localGuideStatus', `Error: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Regenerar guía local';
+  }
+}
+
+// ─── RENDER LOCAL GUIDE PREVIEW (EDITABLE) ────────────────────
+function renderLocalGuidePreview() {
+  const container = document.getElementById('local-guide-preview');
+  const tabs = ['restaurants', 'attractions', 'emergency'];
+  const labels = { restaurants: '🍽 Restaurantes', attractions: '🏛 Atracciones', emergency: '🚨 Emergencias' };
+
+  container.innerHTML = `
+    <div class="tabs-local">
+      ${tabs.map(t => `<button class="tab-local ${activeTab===t?'active':''}" onclick="switchTab('${t}')">${labels[t]}</button>`).join('')}
+    </div>
+    <div id="places-list"></div>
+    <button class="btn btn-secondary" style="margin-top:8px; font-size:13px;" onclick="addPlace()">+ Agregar lugar</button>
+  `;
+  renderPlaces();
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  renderLocalGuidePreview();
+}
+
+function renderPlaces() {
+  const list = document.getElementById('places-list');
+  const places = localGuide[activeTab] || [];
+
+  if (places.length === 0) {
+    list.innerHTML = '<p style="font-size:13px;color:var(--gray);padding:12px 0;">Sin lugares. Haz clic en "+ Agregar lugar" o genera con IA.</p>';
+    return;
+  }
+
+  list.innerHTML = places.map((p, i) => {
+    if (activeTab === 'emergency') {
+      return `
+        <div class="place-edit">
+          <div class="place-edit-header">
+            ${p.icon || '🚨'} ${p.name || 'Servicio de emergencia'}
+            <button class="btn-remove" onclick="removePlace(${i})">×</button>
+          </div>
+          <div class="place-edit-grid">
+            <div class="full"><label style="font-size:12px;color:var(--gray)">Nombre</label>
+              <input value="${esc(p.name)}" oninput="updatePlace(${i},'name',this.value)"></div>
+            <div class="full"><label style="font-size:12px;color:var(--gray)">Dirección (ES)</label>
+              <input value="${esc(p.address_es)}" oninput="updatePlace(${i},'address_es',this.value)"></div>
+            <div class="full"><label style="font-size:12px;color:var(--gray)">Address (EN)</label>
+              <input value="${esc(p.address_en)}" oninput="updatePlace(${i},'address_en',this.value)"></div>
+            <div><label style="font-size:12px;color:var(--gray)">Distancia (ES)</label>
+              <input value="${esc(p.distance_es)}" oninput="updatePlace(${i},'distance_es',this.value)"></div>
+            <div><label style="font-size:12px;color:var(--gray)">Distance (EN)</label>
+              <input value="${esc(p.distance_en)}" oninput="updatePlace(${i},'distance_en',this.value)"></div>
+            <div><label style="font-size:12px;color:var(--gray)">Teléfono</label>
+              <input value="${esc(p.phone)}" oninput="updatePlace(${i},'phone',this.value)"></div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="place-edit">
+        <div class="place-edit-header">
+          ${p.name || 'Lugar'}
+          <button class="btn-remove" onclick="removePlace(${i})">×</button>
+        </div>
+        <div class="place-edit-grid">
+          <div class="full"><label style="font-size:12px;color:var(--gray)">Nombre</label>
+            <input value="${esc(p.name)}" oninput="updatePlace(${i},'name',this.value)"></div>
+          <div class="full"><label style="font-size:12px;color:var(--gray)">Descripción (ES)</label>
+            <textarea oninput="updatePlace(${i},'description_es',this.value)">${esc(p.description_es)}</textarea></div>
+          <div class="full"><label style="font-size:12px;color:var(--gray)">Description (EN)</label>
+            <textarea oninput="updatePlace(${i},'description_en',this.value)">${esc(p.description_en)}</textarea></div>
+          <div><label style="font-size:12px;color:var(--gray)">Distancia/Horario (ES)</label>
+            <input value="${esc(p.distance_es)}" oninput="updatePlace(${i},'distance_es',this.value)"></div>
+          <div><label style="font-size:12px;color:var(--gray)">Distance/Hours (EN)</label>
+            <input value="${esc(p.distance_en)}" oninput="updatePlace(${i},'distance_en',this.value)"></div>
+          <div class="full"><label style="font-size:12px;color:var(--gray)">URL Google Maps</label>
+            <input value="${esc(p.maps_url)}" oninput="updatePlace(${i},'maps_url',this.value)"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function updatePlace(i, key, val) { localGuide[activeTab][i][key] = val; }
+function removePlace(i) { localGuide[activeTab].splice(i, 1); renderLocalGuidePreview(); }
+function addPlace() {
+  const blank = activeTab === 'emergency'
+    ? { icon: '🚨', name: '', address_es: '', address_en: '', distance_es: '', distance_en: '', phone: '' }
+    : { name: '', description_es: '', description_en: '', distance_es: '', distance_en: '', maps_url: '' };
+  localGuide[activeTab].push(blank);
+  renderLocalGuidePreview();
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showStatus(id, msg, type) {
+  document.getElementById(id).innerHTML = `<div class="status ${type}">${msg}</div>`;
+}
+
+// ─── SAVE / LOAD DRAFT ────────────────────────────────────────
+function saveDraft() {
+  const fields = ['apiKey','hostName','hostWhatsapp','hostEmail','propertyName','address','colonia','ciudad',
+    'deptNumber','buildingCode','buildingCodeInstruction','exitInstruction','doorCode','lockType','doorInstruction',
+    'photoAccess','photoExit','wifiName','wifiPass','checkin','checkout','keysLocation','boilerExtra',
+    'otherInstructions','bedrooms','bathrooms','customAmenities','trashDays','customRules','photoMain','photoMap','mapsUrl'];
+  const draft = {};
+  fields.forEach(id => { const el = document.getElementById(id); if (el) draft[id] = el.value; });
+  draft.checkedAmenities = [...document.querySelectorAll('input[name="amenity"]:checked')].map(el => el.value);
+  draft.checkedRules = [...document.querySelectorAll('input[name="rule"]:checked')].map(el => el.value);
+  draft.localGuide = localGuide;
+  draft.boilerType = document.getElementById('boilerType').value;
+  draft.climateType = document.getElementById('climateType').value;
+  localStorage.setItem('bnb-draft', JSON.stringify(draft));
+  alert('✅ Borrador guardado');
+}
+
+window.onload = () => {
+  const saved = localStorage.getItem('bnb-draft');
+  if (!saved) return;
+  try {
+    const draft = JSON.parse(saved);
+    Object.keys(draft).forEach(id => {
+      const el = document.getElementById(id);
+      if (el && typeof draft[id] === 'string') el.value = draft[id];
+    });
+    if (draft.checkedAmenities) {
+      document.querySelectorAll('input[name="amenity"]').forEach(el => {
+        el.checked = draft.checkedAmenities.includes(el.value);
+      });
+    }
+    if (draft.checkedRules) {
+      document.querySelectorAll('input[name="rule"]').forEach(el => {
+        el.checked = draft.checkedRules.includes(el.value);
+      });
+    }
+    if (draft.localGuide) { localGuide = draft.localGuide; renderLocalGuidePreview(); }
+    if (draft.boilerType) document.getElementById('boilerType').value = draft.boilerType;
+    if (draft.climateType) document.getElementById('climateType').value = draft.climateType;
+  } catch(e) {}
+};
+
+// ─── GENERATE HTML ────────────────────────────────────────────
+function generateAndDownload() {
+  const data = collectData();
+  if (!data.propertyName) { alert('Ingresa el nombre del alojamiento'); return; }
+
+  const amenityItems = data.amenities.map(a => `
+                        <div class="amenity-item">
+                            <span class="amenity-icon">${a.icon}</span>
+                            <span class="es">${a.es}</span>
+                            <span class="en">${a.en}</span>
+                        </div>`).join('');
+
+  const bedroomsItem = data.bedrooms > 0 ? `
+                        <div class="amenity-item"><span class="amenity-icon">🛌</span><span class="es">${data.bedrooms} Recámara${data.bedrooms>1?'s':''}</span><span class="en">${data.bedrooms} Bedroom${data.bedrooms>1?'s':''}</span></div>` : '';
+  const bathroomsItem = data.bathrooms > 0 ? `
+                        <div class="amenity-item"><span class="amenity-icon">🚿</span><span class="es">${data.bathrooms} Baño${data.bathrooms>1?'s':''} completo${data.bathrooms>1?'s':''}</span><span class="en">${data.bathrooms} Full Bathroom${data.bathrooms>1?'s':''}</span></div>` : '';
+
+  const rulesEs = data.rules.map(r => `                        <li>${r.es}</li>`).join('\n');
+  const rulesEn = data.rules.map(r => `                        <li>${r.en}</li>`).join('\n');
+
+  const restaurantCards = (localGuide.restaurants || []).map(r => `
+                    <a href="${r.maps_url||'#'}" target="_blank" style="text-decoration: none; color: inherit;">
+                        <div class="place-card">
+                            <div class="place-info">
+                                <div class="place-name">${r.name}</div>
+                                <div class="place-description es">${r.description_es}</div>
+                                <div class="place-description en">${r.description_en}</div>
+                                <div class="place-distance es">${r.distance_es}</div>
+                                <div class="place-distance en">${r.distance_en}</div>
+                            </div>
+                        </div>
+                    </a>`).join('');
+
+  const attractionCards = (localGuide.attractions || []).map(a => `
+                    <a href="${a.maps_url||'#'}" target="_blank" style="text-decoration: none; color: inherit;">
+                        <div class="place-card">
+                            <div class="place-info">
+                                <div class="place-name">${a.name}</div>
+                                <div class="place-description es">${a.description_es}</div>
+                                <div class="place-description en">${a.description_en}</div>
+                                <div class="place-distance es">${a.distance_es}</div>
+                                <div class="place-distance en">${a.distance_en}</div>
+                            </div>
+                        </div>
+                    </a>`).join('');
+
+  const emergencyItems = (localGuide.emergency || []).map(e => `
+                    <div class="contact-item">
+                        <span class="contact-icon">${e.icon}</span>
+                        <div>
+                            <strong>${e.name}</strong>
+                            <p class="es">${e.address_es}</p>
+                            <p class="en">${e.address_en}</p>
+                            <p class="es">${e.distance_es} • Tel: <a href="tel:${e.phone}">${e.phone}</a></p>
+                            <p class="en">${e.distance_en} • Tel: <a href="tel:${e.phone}">${e.phone}</a></p>
+                        </div>
+                    </div>`).join('');
+
+  const otherInstructionsBlock = data.otherInstructions ? `
+                    <h3 class="es">Instrucciones adicionales</h3>
+                    <h3 class="en">Additional instructions</h3>
+                    <p class="es">${data.otherInstructions}</p>
+                    <p class="en">${data.otherInstructions}</p>` : '';
+
+  const mapBlock = data.photoMap ? `
+            <div class="map-container">
+                <a href="${data.mapsUrl||'#'}" target="_blank">
+                    <img src="Imagenes/${data.photoMap}" alt="Mapa del área">
+                    <div class="map-overlay">
+                        <span class="es">Ver en Google Maps</span>
+                        <span class="en">View on Google Maps</span>
+                    </div>
+                </a>
+            </div>` : '';
+
+  const year = new Date().getFullYear();
+  const whatsappMsg = encodeURIComponent('Hola, tengo una consulta sobre mi estancia');
+  const waUrl = `https://wa.me/${data.hostWhatsapp.replace(/[^0-9+]/g,'')}?text=${whatsappMsg}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guía para tu estancia | ${data.propertyName}</title>
+    <style>
+        :root {
+            --airbnb-red: #FF385C;
+            --airbnb-dark: #222222;
+            --airbnb-light-text: #717171;
+            --airbnb-border: #DDDDDD;
+            --airbnb-bg: #F7F7F7;
+            --airbnb-success: #008A05;
+            --font-family: 'Circular', -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;
+            --border-radius: 12px;
+            --box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            --transition: all 0.2s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: var(--font-family); color: var(--airbnb-dark); line-height: 1.5; background-color: white; -webkit-font-smoothing: antialiased; overscroll-behavior-y: none; }
+        h1 { font-size: 32px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.02em; }
+        h2 { font-size: 22px; font-weight: 600; margin-bottom: 16px; letter-spacing: -0.02em; }
+        h3 { font-size: 18px; font-weight: 600; margin-bottom: 12px; margin-top: 24px; }
+        p { margin-bottom: 16px; font-size: 16px; color: var(--airbnb-dark); }
+        a { color: var(--airbnb-dark); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .container { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+        header { border-bottom: 1px solid var(--airbnb-border); position: sticky; top: 0; background-color: white; z-index: 10; }
+        .header-container { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+        .header-left { display: flex; align-items: center; }
+        .logo svg { height: 32px; color: var(--airbnb-red); }
+        .language-toggle { display: flex; align-items: center; margin-left: 16px; padding: 8px 16px; background: white; border: 1px solid var(--airbnb-border); border-radius: 24px; font-size: 14px; font-weight: 500; cursor: pointer; transition: var(--transition); }
+        .language-toggle:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .language-toggle svg { margin-right: 6px; }
+        .hero { margin-top: 16px; margin-bottom: 32px; }
+        .hero h1 { margin-bottom: 8px; font-size: 28px; }
+        .hero p { font-size: 16px; color: var(--airbnb-light-text); margin-bottom: 16px; }
+        .hero-image { width: 100%; height: 250px; border-radius: var(--border-radius); overflow: hidden; }
+        .hero-image img { width: 100%; height: 100%; object-fit: cover; }
+        .tabs { display: flex; margin-bottom: 24px; border-bottom: 1px solid var(--airbnb-border); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab { padding: 16px 0; color: var(--airbnb-light-text); font-size: 15px; font-weight: 500; cursor: pointer; transition: var(--transition); border-bottom: 2px solid transparent; text-decoration: none; white-space: nowrap; margin-right: 24px; }
+        .tab:hover { color: var(--airbnb-dark); text-decoration: none; }
+        .tab.active { color: var(--airbnb-dark); font-weight: 600; border-bottom: 2px solid var(--airbnb-dark); }
+        .card { background-color: white; border-radius: var(--border-radius); margin-bottom: 16px; overflow: hidden; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.1); transition: var(--transition); }
+        .card:hover { box-shadow: var(--box-shadow); }
+        .card-padding { padding: 16px; }
+        .quick-info { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .info-item { padding: 16px; background-color: white; border-radius: var(--border-radius); border: 1px solid var(--airbnb-border); transition: var(--transition); }
+        .info-item:hover { box-shadow: var(--box-shadow); }
+        .info-icon { font-size: 24px; margin-bottom: 12px; }
+        .amenities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+        .amenity-item { display: flex; align-items: center; gap: 12px; }
+        .amenity-icon { width: 24px; height: 24px; }
+        .rules-list li, .checkout-list li { margin-bottom: 12px; padding-left: 8px; list-style-type: disc; margin-left: 16px; }
+        .place-card { display: flex; border: 1px solid var(--airbnb-border); border-radius: var(--border-radius); overflow: hidden; margin-bottom: 16px; transition: var(--transition); }
+        .place-card:hover { box-shadow: var(--box-shadow); }
+        .place-image { width: 100px; height: 100px; flex-shrink: 0; }
+        .place-image img { width: 100%; height: 100%; object-fit: cover; }
+        .place-info { padding: 12px; flex-grow: 1; min-width: 0; }
+        .place-name { font-weight: 600; margin-bottom: 4px; }
+        .place-description { color: var(--airbnb-light-text); margin-bottom: 8px; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .place-distance { font-size: 13px; color: var(--airbnb-light-text); }
+        .contact-button { display: inline-block; background-color: var(--airbnb-red); color: white; font-weight: 600; padding: 14px 24px; border-radius: 8px; margin-top: 16px; cursor: pointer; transition: var(--transition); width: 100%; text-align: center; }
+        .contact-button:hover { background-color: #E00B41; text-decoration: none; }
+        .contact-info { margin-top: 16px; }
+        .contact-item { display: flex; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
+        .contact-icon { width: 24px; text-align: center; flex-shrink: 0; margin-top: 2px; }
+        .map-container { margin-top: 24px; border-radius: var(--border-radius); overflow: hidden; height: 300px; position: relative; }
+        .map-container img { width: 100%; height: 100%; object-fit: cover; }
+        .map-container a { display: block; width: 100%; height: 100%; position: relative; }
+        .map-overlay { position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6); color: white; text-align: center; padding: 10px; font-weight: 500; opacity: 0; transition: opacity 0.3s; }
+        .map-container:hover .map-overlay { opacity: 1; }
+        footer { background-color: white; border-top: 1px solid var(--airbnb-border); padding: 24px 0; margin-top: 48px; }
+        .footer-content { display: flex; justify-content: space-between; flex-direction: column; gap: 12px; }
+        .footer-content p { color: var(--airbnb-light-text); font-size: 14px; margin-bottom: 0; }
+        .en { display: none; }
+        html[lang="en"] .es { display: none; }
+        html[lang="en"] .en { display: block; }
+        span.en, a.en { display: none; }
+        html[lang="en"] span.es, html[lang="en"] a.es { display: none; }
+        html[lang="en"] span.en, html[lang="en"] a.en { display: inline; }
+        section { display: none; }
+        section.active { display: block; }
+        @media (max-width: 768px) {
+            .quick-info, .amenities-grid { grid-template-columns: 1fr; }
+            .place-card { flex-direction: column; }
+            .place-image { width: 100%; height: 160px; }
+            h1 { font-size: 24px; }
+            h2 { font-size: 20px; }
+            .container { padding: 0 12px; }
+        }
+        @media (min-width: 768px) {
+            .footer-content { flex-direction: row; }
+            .contact-button { width: auto; }
+        }
+        html { height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <div class="header-left">
+                <div class="logo">
+                    <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="presentation" focusable="false">
+                        <path d="M16 1c2.008 0 3.463.963 4.751 3.269l.533 1.025c1.954 3.83 6.114 12.54 7.1 14.836l.145.353c.667 1.591.91 2.472.96 3.396l.01.415.001.228c0 4.062-2.877 6.478-6.357 6.478-2.224 0-4.556-1.258-6.709-3.386l-.257-.26-.172-.179h-.011l-.176.185c-2.044 2.1-4.267 3.42-6.414 3.615l-.28.019-.267.006C5.377 31 2.5 28.584 2.5 24.522l.005-.469c.026-.928.23-1.768.83-3.244l.216-.524c.966-2.298 6.083-12.989 7.707-16.034C12.537 1.963 13.992 1 16 1z" fill="#FF385C"></path>
+                    </svg>
+                </div>
+                <button id="language-toggle" class="language-toggle">
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                        <path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm5.2 4.4L11.8 6c-.2-.6-.5-1.1-.8-1.6h2.2zM10 2.7c.7.8 1.3 1.8 1.6 2.9h-1.8c.1-.4.2-.7.2-1.1V2.7zM8 2c.6 0 1.3 1.4 1.6 3.6H6.4C6.7 3.4 7.4 2 8 2zM2.8 9.6l1.4-1.6c.2.6.5 1.1.8 1.6H2.8zM6 13.3c-.7-.8-1.3-1.8-1.6-2.9H6.2c-.1.4-.2.7-.2 1.1v1.8zM8 14c-.6 0-1.3-1.4-1.6-3.6h3.2C9.3 12.6 8.6 14 8 14zm1-4.6H7v-2h2v2zM7 6.4V4.6h2v1.8H7zm5.8 4H10.6c.1-.4.2-.7.2-1.1V7.5h2.2c-.1 1.1-.6 2.1-1.2 2.9zM10.8 6.4c-.1-.4-.2-.7-.2-1.1V3.5h2.2c.4.8.7 1.7.8 2.9h-2.8z" />
+                    </svg>
+                    <span class="es">English</span>
+                    <span class="en">Español</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1 class="es">Bienvenido a tu alojamiento en ${data.propertyName}</h1>
+            <h1 class="en">Welcome to your accommodation at ${data.propertyName}</h1>
+            <p class="es">Aquí hay información para hacer tu estancia más placentera</p>
+            <p class="en">Here's information to make your stay more pleasant</p>
+            ${data.photoMain ? `<div class="hero-image"><img src="Imagenes/${data.photoMain}" alt="Foto principal del alojamiento"></div>` : ''}
+        </div>
+
+        <div class="tabs">
+            <a href="#informacion-esencial" class="tab active es">Información esencial</a>
+            <a href="#informacion-esencial" class="tab active en">Essential Info</a>
+            <a href="#amenidades" class="tab es">Amenidades</a>
+            <a href="#amenidades" class="tab en">Amenities</a>
+            <a href="#guia-local" class="tab es">Recomendaciones</a>
+            <a href="#guia-local" class="tab en">Recommendations</a>
+            <a href="#contacto" class="tab es">Contacto</a>
+            <a href="#contacto" class="tab en">Contact</a>
+        </div>
+
+        <section id="informacion-esencial" class="active">
+            <h2 class="es">Información esencial</h2>
+            <h2 class="en">Essential Information</h2>
+
+            <div class="quick-info">
+                <div class="info-item">
+                    <div class="info-icon">🔑🚪🏨</div>
+                    ${data.photoAccess ? `<div class="place-image" style="width:100%;height:150px;margin-bottom:12px;border-radius:8px;overflow:hidden;"><img src="Imagenes/${data.photoAccess}" alt="Acceso" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+                    <h3 class="es">Acceso al edificio</h3>
+                    <h3 class="en">Building Access</h3>
+                    <p class="es"><strong>Clave de acceso:</strong> ${data.buildingCode}</p>
+                    <p class="en"><strong>Access key:</strong> ${data.buildingCode}</p>
+                    <p class="es"><strong>Instrucciones:</strong> ${data.buildingCodeInstruction}</p>
+                    <p class="en"><strong>Instructions:</strong> ${data.buildingCodeInstruction}</p>
+
+                    <h3 class="es">Salida del edificio</h3>
+                    <h3 class="en">Building Exit</h3>
+                    ${data.photoExit ? `<div class="place-image" style="width:100%;height:150px;margin-bottom:12px;border-radius:8px;overflow:hidden;"><img src="Imagenes/${data.photoExit}" alt="Salida" style="width:100%;height:100%;object-fit:cover;"></div>` : ''}
+                    <p class="es"><strong>Instrucciones:</strong> ${data.exitInstruction}</p>
+                    <p class="en"><strong>Instructions:</strong> ${data.exitInstruction}</p>
+
+                    <h3 class="es">Acceso al depto</h3>
+                    <h3 class="en">Apartment Access</h3>
+                    <p class="es"><strong>Número del depto:</strong> ${data.deptNumber}</p>
+                    <p class="en"><strong>Apartment number:</strong> ${data.deptNumber}</p>
+                    <p class="es"><strong>Código de la puerta:</strong> ${data.doorCode}</p>
+                    <p class="en"><strong>Door code:</strong> ${data.doorCode}</p>
+                    <p class="es"><strong>Instrucciones:</strong> ${data.doorInstruction}</p>
+                    <p class="en"><strong>Instructions:</strong> ${data.doorInstruction}</p>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">📶</div>
+                    <h3 class="es">Conexión WiFi</h3>
+                    <h3 class="en">WiFi Connection</h3>
+                    <p class="es"><strong>Red:</strong> ${data.wifiName}</p>
+                    <p class="en"><strong>Network:</strong> ${data.wifiName}</p>
+                    <p class="es"><strong>Contraseña:</strong> ${data.wifiPass}</p>
+                    <p class="en"><strong>Password:</strong> ${data.wifiPass}</p>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">⏰</div>
+                    <h3 class="es">Horarios</h3>
+                    <h3 class="en">Schedule</h3>
+                    <p class="es"><strong>Check-in:</strong> ${data.checkin}</p>
+                    <p class="en"><strong>Check-in:</strong> ${data.checkin}</p>
+                    <p class="es"><strong>Check-out:</strong> ${data.checkout}</p>
+                    <p class="en"><strong>Check-out:</strong> ${data.checkout}</p>
+                    <p class="es"><strong>Early Check-in o Late Check-out:</strong> Sujeto a disponibilidad; puedes preguntar 2 días antes de tu llegada.</p>
+                    <p class="en"><strong>Early Check-in or Late Check-out:</strong> Subject to availability; ask 2 days before your arrival.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-padding">
+                    <h2 class="es">Instrucciones del alojamiento</h2>
+                    <h2 class="en">Accommodation Instructions</h2>
+                    <h3 class="es">Cocina</h3>
+                    <h3 class="en">Kitchen</h3>
+                    <p class="es">La cocina está completamente equipada con todos los utensilios necesarios para cocinar.</p>
+                    <p class="en">The kitchen is fully equipped with all necessary utensils for cooking.</p>
+                    <h3 class="es">Boiler (Calentador)</h3>
+                    <h3 class="en">Water Heater</h3>
+                    <p class="es">${data.boilerInstructionEs}</p>
+                    <p class="en">${data.boilerInstructionEn}</p>
+                    <h3 class="es">Climatización</h3>
+                    <h3 class="en">Climate</h3>
+                    <p class="es">${data.climateEs}</p>
+                    <p class="en">${data.climateEn}</p>
+                    ${otherInstructionsBlock}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-padding">
+                    <h2 class="es">Reglas de la casa</h2>
+                    <h2 class="en">House Rules</h2>
+                    <ul class="rules-list es">${rulesEs}</ul>
+                    <ul class="rules-list en">${rulesEn}</ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-padding">
+                    <h2 class="es">Instrucciones para el check-out</h2>
+                    <h2 class="en">Check-out Instructions</h2>
+                    <p class="es">Para hacer el check-out, por favor sigue estos sencillos pasos:</p>
+                    <p class="en">To check out, please follow these simple steps:</p>
+                    <ul class="checkout-list es">
+                        <li>Por favor mándanos un mensajito compartiendo tu hora estimada de Check-out.</li>
+                        <li>Deja las llaves en ${data.keysLocation || 'la mesa de la entrada'}.</li>
+                        <li>Asegúrate de que todas las ventanas y puertas estén cerradas.</li>
+                        <li>Apaga todos los electrodomésticos y luces.</li>
+                        <li>Por favor deja los trastes limpios.</li>
+                        <li>Cierra la puerta principal al salir.</li>
+                    </ul>
+                    <ul class="checkout-list en">
+                        <li>Please send us a message sharing your estimated check-out time.</li>
+                        <li>Leave the keys at ${data.keysLocation || 'the entrance table'}.</li>
+                        <li>Make sure all windows and doors are closed.</li>
+                        <li>Turn off all appliances and lights.</li>
+                        <li>Please leave the dishes clean.</li>
+                        <li>Close the main door when leaving.</li>
+                    </ul>
+                    <p class="es"><strong>¡Gracias por haber sido excelentes huéspedes y por elegir nuestro alojamiento! Tu opinión es muy importante para nosotros. Te agradecemos si puedes dejarnos una reseña en Airbnb.</strong></p>
+                    <p class="en"><strong>Thank you for being excellent guests and choosing our accommodation! Your feedback is very important to us. We appreciate if you can leave us a review on Airbnb.</strong></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="amenidades">
+            <h2 class="es">Comodidades y amenidades</h2>
+            <h2 class="en">Comforts and Amenities</h2>
+            <div class="card">
+                <div class="card-padding">
+                    <div class="amenities-grid">
+                        ${bedroomsItem}
+                        ${bathroomsItem}
+                        ${amenityItems}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="guia-local">
+            <h2 class="es">Guía local</h2>
+            <h2 class="en">Local Guide</h2>
+
+            ${restaurantCards ? `<div class="card"><div class="card-padding">
+                <h3 class="es">Restaurantes recomendados</h3>
+                <h3 class="en">Recommended Restaurants</h3>
+                ${restaurantCards}
+            </div></div>` : ''}
+
+            ${attractionCards ? `<div class="card"><div class="card-padding">
+                <h3 class="es">Atracciones cercanas</h3>
+                <h3 class="en">Nearby Attractions</h3>
+                ${attractionCards}
+            </div></div>` : ''}
+
+            <div class="card">
+                <div class="card-padding">
+                    <h3 class="es">Servicios de emergencia</h3>
+                    <h3 class="en">Emergency Services</h3>
+                    ${emergencyItems}
+                    ${mapBlock}
+                </div>
+            </div>
+        </section>
+
+        <section id="contacto">
+            <h2 class="es">Contacto del anfitrión</h2>
+            <h2 class="en">Host Contact</h2>
+            <div class="card">
+                <div class="card-padding">
+                    <p class="es">Estamos disponibles las 24 horas para ayudarte durante tu estancia.</p>
+                    <p class="en">We are available 24 hours to help you during your stay.</p>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <span class="contact-icon">📱</span>
+                            <span>
+                                <strong class="es">Teléfono/WhatsApp:</strong>
+                                <strong class="en">Phone/WhatsApp:</strong>
+                                <a href="${waUrl}" target="_blank">${data.hostWhatsapp}</a>
+                            </span>
+                        </div>
+                        ${data.hostEmail ? `<div class="contact-item">
+                            <span class="contact-icon">📧</span>
+                            <span><strong>Email:</strong> <a href="mailto:${data.hostEmail}">${data.hostEmail}</a></span>
+                        </div>` : ''}
+                        <div class="contact-item">
+                            <span class="contact-icon">⚠️</span>
+                            <span>
+                                <strong class="es">Emergencias:</strong>
+                                <strong class="en">Emergencies:</strong>
+                                <a href="tel:${data.hostWhatsapp}">${data.hostWhatsapp}</a>
+                            </span>
+                        </div>
+                    </div>
+                    <p class="es">Tiempo de respuesta típico: <strong>15 minutos</strong></p>
+                    <p class="en">Typical response time: <strong>15 minutes</strong></p>
+                    <a href="${waUrl}" target="_blank" class="contact-button es">Enviar mensaje al anfitrión</a>
+                    <a href="${waUrl}" target="_blank" class="contact-button en">Send message to host</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container footer-content">
+            <p class="es">© ${year} ${data.hostName || 'Anfitrión'} • Una experiencia Airbnb</p>
+            <p class="en">© ${year} ${data.hostName || 'Host'} • An Airbnb experience</p>
+            <p class="es">Política de privacidad • Términos de servicio • Ayuda</p>
+            <p class="en">Privacy Policy • Terms of Service • Help</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const languageToggle = document.getElementById('language-toggle');
+            languageToggle.addEventListener('click', function() {
+                const html = document.documentElement;
+                html.setAttribute('lang', html.getAttribute('lang') === 'es' ? 'en' : 'es');
+            });
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('section');
+            sections.forEach((s, i) => { if (i !== 0) s.classList.remove('active'); });
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab[href="#' + targetId + '"]').forEach(t => t.classList.add('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    document.getElementById(targetId).classList.add('active');
+                    window.scrollTo({ top: document.querySelector('.tabs').offsetTop - 70, behavior: 'smooth' });
+                });
+            });
+            if (window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                const t = document.querySelector('.tab[href="#' + hash + '"]');
+                if (t) t.click();
+            }
+        });
+    <\/script>
+</body>
+</html>`;
+
+  downloadFile(html, 'index.html');
+}
+
+function downloadFile(content, filename) {
+  const blob = new Blob([content], { type: 'text/html; charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
