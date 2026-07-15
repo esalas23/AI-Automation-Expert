@@ -748,6 +748,8 @@ function renderPlaces() {
             <input value="${esc(p.distance_en)}" oninput="updatePlace(${i},'distance_en',this.value)"></div>
           <div class="full"><label style="font-size:12px;color:var(--gray)">URL Google Maps</label>
             <input value="${esc(p.maps_url)}" oninput="updatePlace(${i},'maps_url',this.value)"></div>
+          <div class="full"><label style="font-size:12px;color:var(--gray)">📸 Foto — nombre de archivo (ej: tacos.jpg) o URL</label>
+            <input value="${esc(p.photo_url||p.photo_file||'')}" placeholder="Imagenes/tacos.jpg  ó  https://..." oninput="updatePlace(${i},'photo_file',this.value)"></div>
         </div>
       </div>`;
   }).join('');
@@ -831,10 +833,12 @@ function generateAndDownload() {
   const rulesEs = data.rules.map(r => `                        <li>${r.es}</li>`).join('\n');
   const rulesEn = data.rules.map(r => `                        <li>${r.en}</li>`).join('\n');
 
-  const placeCard = (p, url) => `
+  const placeCard = (p, url) => {
+    const photoSrc = p.photo_url || p.photo_file || '';
+    return `
                     <a href="${url||'#'}" target="_blank" style="text-decoration: none; color: inherit;">
                         <div class="place-card">
-                            ${p.photo_url ? `<div class="place-image"><img src="${p.photo_url}" alt="${p.name}" loading="lazy"></div>` : ''}
+                            ${photoSrc ? `<div class="place-image"><img src="${photoSrc}" alt="${p.name}" loading="lazy"></div>` : ''}
                             <div class="place-info">
                                 <div class="place-name">${p.name}</div>
                                 <div class="place-description es">${p.description_es}</div>
@@ -844,6 +848,7 @@ function generateAndDownload() {
                             </div>
                         </div>
                     </a>`;
+  };
 
   const restaurantCards = (localGuide.restaurants || []).map(r => placeCard(r, r.maps_url)).join('');
   const attractionCards = (localGuide.attractions || []).map(a => placeCard(a, a.maps_url)).join('');
