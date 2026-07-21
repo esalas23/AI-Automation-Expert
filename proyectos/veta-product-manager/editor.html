@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veta — Agregar Producto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream:  #FAFAF7;
+            --white:  #FFFFFF;
+            --dark:   #1A1A18;
+            --gold:   #B5934A;
+            --muted:  #6E6E68;
+            --border: #E5E1D8;
+            --serif:  'Cormorant Garamond', Georgia, serif;
+            --sans:   'DM Sans', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--sans); background: var(--cream); color: var(--dark); -webkit-font-smoothing: antialiased; }
+
+        header {
+            background: var(--white); border-bottom: 1px solid var(--border);
+            padding: 0 32px; height: 64px; display: flex; align-items: center; gap: 16px;
+        }
+        .logo { font-family: var(--serif); font-size: 22px; font-weight: 300; letter-spacing: 0.3em; }
+        .logo-sub { font-family: var(--sans); font-size: 13px; font-weight: 300; letter-spacing: 0.06em; color: var(--muted); }
+
+        main { max-width: 860px; margin: 0 auto; padding: 48px 24px; display: flex; flex-direction: column; gap: 24px; }
+
+        .card { background: var(--white); border: 1px solid var(--border); padding: 28px 32px; }
+        .card-title { font-family: var(--serif); font-size: 20px; font-weight: 400; margin-bottom: 4px; }
+        .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
+
+        .field { margin-bottom: 16px; }
+        .field:last-child { margin-bottom: 0; }
+        label { display: block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+        input[type=text], input[type=number], input[type=password] {
+            width: 100%; padding: 10px 14px; border: 1px solid var(--border); background: var(--cream);
+            font-family: var(--sans); font-size: 14px; color: var(--dark); outline: none; transition: border-color 0.2s;
+        }
+        input:focus { border-color: var(--gold); }
+        .field-hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .drop-zone {
+            border: 2px dashed var(--border); padding: 40px 24px; text-align: center;
+            cursor: pointer; transition: border-color 0.2s, background 0.2s; user-select: none;
+        }
+        .drop-zone:hover, .drop-zone.drag { border-color: var(--gold); background: rgba(181,147,74,0.04); }
+        .drop-zone p { font-size: 14px; color: var(--muted); margin-top: 10px; }
+        .drop-zone small { font-size: 12px; color: #C8C4BC; }
+        #file-input { display: none; }
+
+        .photos-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+        .photo-item { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--cream); border: 1px solid var(--border); }
+        .photo-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .photo-overlay {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 6px;
+            background: rgba(250,250,247,0.88); font-size: 12px; color: var(--muted);
+            transition: opacity 0.2s;
+        }
+        .photo-overlay.done { color: #22c55e; font-size: 20px; }
+        .photo-overlay.error { color: #ef4444; font-size: 11px; padding: 8px; text-align: center; }
+        .photo-overlay.hidden { opacity: 0; pointer-events: none; }
+        .remove-btn {
+            position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
+            background: rgba(26,26,24,0.65); color: white; border: none; cursor: pointer;
+            font-size: 13px; display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .remove-btn:hover { background: var(--dark); }
+
+        .spinner {
+            width: 22px; height: 22px; border: 2px solid var(--border);
+            border-top-color: var(--gold); border-radius: 50%;
+            animation: spin 0.8s linear infinite; flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px;
+            font-family: var(--sans); font-size: 11px; letter-spacing: 0.14em;
+            text-transform: uppercase; cursor: pointer; border: none; font-weight: 500; transition: all 0.2s;
+        }
+        .btn-primary { background: var(--dark); color: white; }
+        .btn-primary:hover:not(:disabled) { background: var(--gold); }
+        .btn-primary:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+        .progress-wrap { height: 3px; background: var(--border); margin-top: 12px; display: none; }
+        .progress-fill { height: 100%; background: var(--gold); transition: width 0.4s; }
+
+        .output-section { display: none; flex-direction: column; gap: 24px; }
+        .output-section.visible { display: flex; }
+
+        .dl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 14px; }
+        .dl-item { display: flex; flex-direction: column; gap: 6px; }
+        .dl-item img { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--border); display: block; }
+        .dl-btn {
+            padding: 7px 4px; background: var(--dark); color: white; border: none; cursor: pointer;
+            font-size: 10px; font-family: var(--sans); letter-spacing: 0.1em; text-transform: uppercase;
+            text-align: center; text-decoration: none; display: block; transition: background 0.2s;
+        }
+        .dl-btn:hover { background: var(--gold); }
+
+        .snippet-block {
+            background: var(--cream); border: 1px solid var(--border); border-radius: 0;
+            padding: 16px 14px; margin-top: 10px; position: relative; overflow: auto;
+        }
+        .snippet-block code { font-family: 'Menlo', 'Monaco', monospace; font-size: 12px; line-height: 1.65; white-space: pre; display: block; }
+        .copy-btn {
+            position: absolute; top: 8px; right: 8px; padding: 4px 12px;
+            background: var(--dark); color: white; border: none; cursor: pointer;
+            font-size: 10px; font-family: var(--sans); letter-spacing: 0.1em; text-transform: uppercase;
+            transition: background 0.2s;
+        }
+        .copy-btn:hover { background: var(--gold); }
+        .copy-btn.copied { background: #22c55e; }
+
+        .steps { display: flex; flex-direction: column; gap: 20px; }
+        .step { display: flex; gap: 14px; align-items: flex-start; }
+        .step-num {
+            width: 26px; height: 26px; background: var(--gold); color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 500; flex-shrink: 0; margin-top: 2px;
+        }
+        .step-body { font-size: 14px; line-height: 1.6; }
+        .step-body strong { display: block; margin-bottom: 4px; }
+        code { font-family: 'Menlo', 'Monaco', monospace; font-size: 12px; background: var(--cream); padding: 1px 5px; border: 1px solid var(--border); }
+
+        .status-line { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 18px; }
+
+        @media (max-width: 600px) {
+            .row { grid-template-columns: 1fr; }
+            .photos-grid { grid-template-columns: repeat(2, 1fr); }
+            main { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <span class="logo">VETA</span>
+    <span class="logo-sub">— Agregar producto</span>
+</header>
+
+<main>
+
+    <!-- CONFIG -->
+    <div class="card">
+        <p class="card-title">Configuración</p>
+        <p class="card-sub">La clave se guarda solo en este navegador, no va al repositorio.</p>
+        <div class="field">
+            <label>Gemini API Key</label>
+            <input type="password" id="api-key" placeholder="AIza...">
+        </div>
+    </div>
+
+    <!-- PRODUCT DATA -->
+    <div class="card">
+        <p class="card-title">Datos del collar</p>
+        <p class="card-sub">Nombre y precio que aparecerán en la página de Veta.</p>
+        <div class="row">
+            <div class="field">
+                <label>Nombre del collar</label>
+                <input type="text" id="collar-name" placeholder="Collar Ámbar">
+            </div>
+            <div class="field">
+                <label>Precio (MXN)</label>
+                <input type="number" id="collar-price" placeholder="1299">
+            </div>
+        </div>
+        <div class="field">
+            <label>Número de producto</label>
+            <input type="number" id="product-num" value="6" min="1">
+            <p class="field-hint">Tienes 5 productos (1–5). El siguiente es el 6.</p>
+        </div>
+    </div>
+
+    <!-- PHOTOS -->
+    <div class="card">
+        <p class="card-title">Fotos del collar</p>
+        <p class="card-sub">Sube hasta 4 fotos desde tu iPhone. Gemini estandarizará el fondo a crema <code>#FAFAF7</code> y centrará la pieza.</p>
+        <div class="drop-zone" id="drop-zone">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B5934A" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Arrastra las fotos aquí o <strong>haz clic para seleccionar</strong></p>
+            <small>JPG, PNG · máximo 4 fotos</small>
+        </div>
+        <input type="file" id="file-input" accept="image/*" multiple>
+        <div class="photos-grid" id="photos-grid"></div>
+    </div>
+
+    <!-- ACTION -->
+    <div>
+        <button class="btn btn-primary" id="process-btn" disabled>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Procesar con Gemini
+        </button>
+        <div class="status-line" id="status-line"></div>
+        <div class="progress-wrap" id="progress-wrap">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="output-section" id="output-section">
+
+        <div class="card">
+            <p class="card-title">Fotos procesadas</p>
+            <p class="card-sub">Descarga cada foto y guárdala en <code>Fotos editadas/</code> dentro de la carpeta de Veta.</p>
+            <div class="dl-grid" id="dl-grid"></div>
+        </div>
+
+        <div class="card">
+            <p class="card-title">Código para index.html</p>
+            <p class="card-sub">Copia y pega los dos bloques en el HTML de Veta.</p>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-body">
+                        <strong>Dentro de <code>.products-grid</code> — antes del cierre <code>&lt;/div&gt;</code></strong>
+                        <div class="snippet-block">
+                            <button class="copy-btn" onclick="copySnippet('html-code', this)">Copiar</button>
+                            <code id="html-code"></code>
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-body">
+                        <strong>Dentro del objeto <code>PRODUCTS</code> en el <code>&lt;script&gt;</code> — antes del cierre <code>}</code></strong>
+                        <div class="snippet-block">
+                            <button class="copy-btn" onclick="copySnippet('js-code', this)">Copiar</button>
+                            <code id="js-code"></code>
+                        </div>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-body" id="step-3-body">
+                        <!-- filled by JS if CSS update needed -->
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num" id="step-zip-num">4</div>
+                    <div class="step-body">
+                        <strong>ZIP y deploy a Amplify</strong>
+                        <div class="snippet-block" style="margin-top:8px;">
+                            <code>cd ~/Documents/Veta &amp;&amp; zip -r Veta.zip index.html "Fotos editadas/"</code>
+                        </div>
+                        <p style="font-size:13px; color:var(--muted); margin-top:8px;">Luego sube <code>Veta.zip</code> en AWS Amplify → Deployments → Deploy without Git.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</main>
+
+<script>
+    const files     = [];
+    const processed = []; // { dataUrl, filename, mimeType }
+
+    // ── Persist API key & draft
+    const apiKeyEl  = document.getElementById('api-key');
+    const nameEl    = document.getElementById('collar-name');
+    const priceEl   = document.getElementById('collar-price');
+    const numEl     = document.getElementById('product-num');
+
+    apiKeyEl.value  = localStorage.getItem('veta_gemini_key')   || '';
+    nameEl.value    = localStorage.getItem('veta_draft_name')   || '';
+    priceEl.value   = localStorage.getItem('veta_draft_price')  || '';
+
+    apiKeyEl.addEventListener('input',  () => localStorage.setItem('veta_gemini_key',  apiKeyEl.value.trim()));
+    nameEl.addEventListener('input',    () => localStorage.setItem('veta_draft_name',  nameEl.value));
+    priceEl.addEventListener('input',   () => localStorage.setItem('veta_draft_price', priceEl.value));
+    [apiKeyEl, nameEl, priceEl, numEl].forEach(el => el.addEventListener('input', checkReady));
+
+    // ── Drop zone
+    const dropZone  = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const photosGrid = document.getElementById('photos-grid');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); addFiles([...e.dataTransfer.files]); });
+    fileInput.addEventListener('change', () => { addFiles([...fileInput.files]); fileInput.value = ''; });
+
+    function addFiles(newFiles) {
+        const slots = 4 - files.length;
+        newFiles.filter(f => f.type.startsWith('image/')).slice(0, slots).forEach((f, i) => {
+            const idx = files.length;
+            files.push(f);
+            renderPhotoCard(f, idx);
+        });
+        checkReady();
+    }
+
+    function renderPhotoCard(file, idx) {
+        const div = document.createElement('div');
+        div.className = 'photo-item';
+        div.id = 'photo-item-' + idx;
+
+        const img = document.createElement('img');
+        const reader = new FileReader();
+        reader.onload = e => { img.src = e.target.result; };
+        reader.readAsDataURL(file);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'photo-overlay hidden';
+        overlay.id = 'overlay-' + idx;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = 'Quitar';
+        removeBtn.onclick = e => {
+            e.stopPropagation();
+            files.splice(idx, 1);
+            photosGrid.innerHTML = '';
+            files.forEach((f, i) => renderPhotoCard(f, i));
+            checkReady();
+        };
+
+        div.append(img, overlay, removeBtn);
+        photosGrid.appendChild(div);
+    }
+
+    function checkReady() {
+        document.getElementById('process-btn').disabled =
+            files.length === 0 ||
+            !apiKeyEl.value.trim() ||
+            !nameEl.value.trim() ||
+            !priceEl.value.trim();
+    }
+
+    // ── Process
+    document.getElementById('process-btn').addEventListener('click', processAll);
+
+    async function processAll() {
+        const apiKey = apiKeyEl.value.trim();
+        document.getElementById('process-btn').disabled = true;
+        document.getElementById('output-section').classList.remove('visible');
+        processed.length = 0;
+
+        const progressWrap = document.getElementById('progress-wrap');
+        const progressFill = document.getElementById('progress-fill');
+        const statusLine   = document.getElementById('status-line');
+
+        progressWrap.style.display = 'block';
+        progressFill.style.width   = '0%';
+
+        for (let i = 0; i < files.length; i++) {
+            statusLine.textContent = `Procesando foto ${i + 1} de ${files.length}…`;
+
+            const overlay = document.getElementById('overlay-' + i);
+            overlay.className = 'photo-overlay';
+            overlay.innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const result = await processPhoto(files[i], apiKey, i);
+                processed.push(result);
+
+                // Replace preview with processed image
+                const img = document.querySelector('#photo-item-' + i + ' img');
+                img.src = result.dataUrl;
+                overlay.className = 'photo-overlay done';
+                overlay.textContent = '✓';
+                setTimeout(() => { overlay.className = 'photo-overlay hidden'; }, 1200);
+
+            } catch (err) {
+                processed.push(null);
+                overlay.className = 'photo-overlay error';
+                overlay.textContent = err.message;
+            }
+
+            progressFill.style.width = ((i + 1) / files.length * 100) + '%';
+        }
+
+        statusLine.textContent = 'Listo.';
+        document.getElementById('process-btn').disabled = false;
+        renderOutput();
+    }
+
+    async function processPhoto(file, apiKey, photoIdx) {
+        const base64   = await toBase64(file);
+        const mimeType = file.type || 'image/jpeg';
+        const num      = +numEl.value || 6;
+        const letters  = ['a', 'b', 'c', 'd'];
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: 'user', parts: [
+                    { inline_data: { mime_type: mimeType, data: base64 } },
+                    { text: `Edit this handmade necklace product photo taken with an iPhone:
+1. Remove the existing background completely
+2. Replace the background with a clean, flat, uniform cream color — exactly hex #FAFAF7
+3. Center the necklace in a square (1:1) composition
+4. Preserve all details, colors, textures and materials of the jewelry exactly — do not alter the piece itself
+5. Apply soft, diffused, shadow-free lighting so every detail is clearly visible
+6. The final image must look like a professional luxury jewelry brand product photo
+Output only the edited square image. No text, no watermarks, no props.` }
+                ]}],
+                generationConfig: { responseModalities: ['IMAGE'] }
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Error en Gemini API');
+
+        const parts   = data.candidates?.[0]?.content?.parts;
+        const imgPart = parts?.find(p => p.inlineData);
+        if (!imgPart) throw new Error('Gemini no devolvió imagen');
+
+        const outMime = imgPart.inlineData.mimeType || 'image/png';
+        const ext     = outMime.includes('png') ? 'png' : 'jpg';
+        const filename = `${num}${letters[photoIdx]}.${ext}`;
+
+        return { dataUrl: `data:${outMime};base64,${imgPart.inlineData.data}`, filename, mimeType: outMime };
+    }
+
+    function toBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload  = e => resolve(e.target.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ── Output
+    function renderOutput() {
+        const name  = nameEl.value.trim();
+        const price = parseInt(priceEl.value).toLocaleString('es-MX');
+        const num   = +numEl.value || 6;
+        const wa    = encodeURIComponent(`Hola, me interesa el ${name} de Veta`);
+        const valid = processed.filter(Boolean);
+
+        // Download grid
+        const dlGrid = document.getElementById('dl-grid');
+        dlGrid.innerHTML = '';
+        valid.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'dl-item';
+            const img = document.createElement('img');
+            img.src = p.dataUrl;
+            const a = document.createElement('a');
+            a.className = 'dl-btn';
+            a.textContent = p.filename;
+            a.href = p.dataUrl;
+            a.download = p.filename;
+            item.append(img, a);
+            dlGrid.appendChild(item);
+        });
+
+        // HTML snippet
+        const firstImg = valid[0] ? `Fotos editadas/${valid[0].filename}` : `Fotos editadas/${num}.png`;
+        document.getElementById('html-code').textContent =
+`                <div class="product-card">
+                    <div class="product-image" data-product="${num}">
+                        <img src="${firstImg}" alt="${name}">
+                        <div class="gallery-hint">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            Ver fotos
+                        </div>
+                        <span class="photo-badge" id="badge-${num}"></span>
+                    </div>
+                    <div class="product-info">
+                        <p class="product-type">Collar</p>
+                        <h3 class="product-name">${name}</h3>
+                        <p class="product-price">$${price} MXN</p>
+                        <a href="https://wa.me/525540179402?text=${wa}" target="_blank" class="product-btn">Consultar</a>
+                    </div>
+                </div>`;
+
+        // JS snippet — images array
+        const imgLines = valid.map(p => `                    'Fotos editadas/${p.filename}',`).join('\n');
+        const placeholders = Array.from({ length: Math.max(0, 3 - valid.length) }, (_, i) => {
+            const letter = String.fromCharCode(97 + valid.length + i);
+            return `                    // 'Fotos editadas/${num}${letter}.png',`;
+        }).join('\n');
+
+        document.getElementById('js-code').textContent =
+`            ${num}: {
+                name:   '${name}',
+                price:  '$${price} MXN',
+                wa:     'https://wa.me/525540179402?text=${wa}',
+                images: [
+${imgLines}${placeholders ? '\n' + placeholders : ''}
+                ]
+            },`;
+
+        // Step 3: CSS grid note if adding product 6 (removes centering for products 4 & 5)
+        const step3 = document.getElementById('step-3-body');
+        if (num === 6) {
+            step3.innerHTML = `<strong>Actualiza el CSS — elimina el centrado de productos 4 y 5</strong>
+<p style="font-size:13px; color:var(--muted); margin-bottom:8px;">Con 6 productos, la segunda fila queda completa y ya no necesita centrarse.</p>
+<div class="snippet-block">
+    <button class="copy-btn" onclick="copySnippet('css-code', this)">Copiar</button>
+    <code id="css-code">/* ELIMINA estas dos líneas del CSS: */
+.products-grid .product-card:nth-child(4) { grid-column: 2 / 4; }
+.products-grid .product-card:nth-child(5) { grid-column: 4 / 6; }</code>
+</div>`;
+            document.getElementById('step-zip-num').textContent = '4';
+        } else {
+            step3.innerHTML = `<strong>ZIP y deploy a Amplify</strong>
+<div class="snippet-block" style="margin-top:8px;">
+    <code>cd ~/Documents/Veta &amp;&amp; zip -r Veta.zip index.html "Fotos editadas/"</code>
+</div>
+<p style="font-size:13px; color:var(--muted); margin-top:8px;">Sube <code>Veta.zip</code> en AWS Amplify → Deployments → Deploy without Git.</p>`;
+            // Hide step 4 when step 3 already covers it
+            document.getElementById('step-zip-num').closest('.step').style.display = 'none';
+        }
+
+        document.getElementById('output-section').classList.add('visible');
+        document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copySnippet(codeId, btn) {
+        const text = document.getElementById(codeId).textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = 'Copiado ✓';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+        });
+    }
+
+    checkReady();
+</script>
+
+</body>
+</html>
